@@ -1,0 +1,18 @@
+{
+  "name": "Session Notes",
+  "short_name": "Session Notes",
+  "description": "Post-session bodywork notes and home care generator",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f5f2",
+  "theme_color": "#1a1a1a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
