@@ -537,6 +537,10 @@
       <div class="field-label">Your name / sign-off</div>
       <input type="text" id="practitionerName" placeholder="e.g. Sarah">
     </div>
+    <div class="field">
+      <div class="field-label">Your email (for saving records)</div>
+      <input type="text" id="practitionerEmail" placeholder="you@gmail.com" autocapitalize="none" autocorrect="off" inputmode="email">
+    </div>
     <button class="save-btn" onclick="saveSettings()">Save settings</button>
     <div class="divider"></div>
     <div style="font-size:13px;color:var(--ink3);line-height:1.6;">
@@ -752,7 +756,7 @@
     </div>
     <div style="padding: 12px 0 8px; display:flex; gap:10px;">
       <button class="btn btn-secondary" onclick="restart()" style="flex:0 0 auto;padding:14px 18px;">New session</button>
-      <button class="btn btn-primary" onclick="refine()">Refine outputs ↗</button>
+      <button class="btn btn-primary" onclick="saveToGmail()">Save to Gmail ↗</button>
     </div>
     <div class="pb-safe"></div>
   </div>
@@ -942,6 +946,7 @@ EMAIL_END`;
     document.getElementById('mainNav').style.display = 'none';
     document.getElementById('progressFill').style.width = '100%';
     document.getElementById('topbarTitle').textContent = 'Outputs ready';
+    localStorage.setItem('lastSessionDate', data.date);
 
   } catch(e) {
     clearInterval(msgTimer);
@@ -999,6 +1004,29 @@ function refine() {
   }
 }
 
+function saveToGmail() {
+  const soap = document.getElementById('soapOut').textContent;
+  const clientEmail = document.getElementById('emailOut').textContent;
+  const clientName = document.getElementById('emailMeta').textContent.replace('To: ', '') || 'Client';
+  const date = localStorage.getItem('lastSessionDate') || new Date().toLocaleDateString();
+  const to = localStorage.getItem('practitionerEmail') || '';
+
+  const subject = encodeURIComponent(`Session notes — ${clientName} — ${date}`);
+  const body = encodeURIComponent(
+    `SOAP NOTE
+${'─'.repeat(40)}
+${soap}
+
+
+CLIENT HOME CARE EMAIL
+${'─'.repeat(40)}
+${clientEmail}`
+  );
+
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${subject}&body=${body}`;
+  window.open(gmailUrl, '_blank');
+}
+
 // SETTINGS
 function openSettings(isWelcome) {
   const s = document.getElementById('settings-screen');
@@ -1006,6 +1034,7 @@ function openSettings(isWelcome) {
   const key = localStorage.getItem('apiKey') || '';
   document.getElementById('apiKeyInput').value = key;
   document.getElementById('practitionerName').value = localStorage.getItem('practitionerName') || '';
+  document.getElementById('practitionerEmail').value = localStorage.getItem('practitionerEmail') || '';
   const status = document.getElementById('apiStatus');
   if (key) { status.textContent = 'API key saved'; status.className = 'api-status set'; }
   else { status.textContent = 'No API key saved'; status.className = 'api-status unset'; }
@@ -1020,6 +1049,8 @@ function saveSettings() {
   const name = document.getElementById('practitionerName').value.trim();
   if (key) localStorage.setItem('apiKey', key);
   if (name) localStorage.setItem('practitionerName', name);
+  const email = document.getElementById('practitionerEmail').value.trim();
+  if (email) localStorage.setItem('practitionerEmail', email);
   const status = document.getElementById('apiStatus');
   status.textContent = key ? 'API key saved' : 'No API key saved';
   status.className = key ? 'api-status set' : 'api-status unset';
