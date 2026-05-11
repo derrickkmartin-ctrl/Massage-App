@@ -5,761 +5,1072 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Movement Screen">
-<meta name="theme-color" content="#0f0f0f">
+<meta name="apple-mobile-web-app-title" content="Session Notes">
+<meta name="theme-color" content="#1a1a1a">
+<title>Session Notes</title>
 <link rel="manifest" href="manifest.json">
-<title>Movement Screen</title>
+<link rel="apple-touch-icon" href="icon.svg">
 <style>
-:root {
-  --bg:       #0f0f0f;
-  --surf:     #1a1a1a;
-  --surf2:    #242424;
-  --surf3:    #2e2e2e;
-  --ink:      #f0ede8;
-  --ink2:     #a09a92;
-  --ink3:     #5a5550;
-  --accent:   #c8b89a;
-  --teal:     #7ec8b8;
-  --orange:   #e8906a;
-  --red:      #e06868;
-  --green:    #7ec898;
-  --amber:    #e8b86a;
-  --purple:   #b89ae8;
-  --border:   rgba(255,255,255,0.07);
-  --border2:  rgba(255,255,255,0.14);
-  --r:        14px;
-  --rsm:      8px;
-  --sans:     -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
-  --mono:     'SF Mono', 'Fira Code', monospace;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: var(--sans); overflow: hidden; }
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
 
-/* ── LAYOUT ── */
-#app { height: 100dvh; display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; position: relative; }
+  :root {
+    --bg: #f7f5f2;
+    --surface: #ffffff;
+    --surface2: #f0ede8;
+    --ink: #1a1a1a;
+    --ink2: #5a5650;
+    --ink3: #9a958f;
+    --accent: #2d6a4f;
+    --accent-light: #e8f0eb;
+    --accent-text: #1a4731;
+    --warn: #c45c2a;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.14);
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+  }
 
-/* ── TOP BAR ── */
-.topbar {
-  flex-shrink: 0;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 52px 20px 14px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
-}
-.topbar-title { font-size: 17px; font-weight: 600; letter-spacing: -.2px; }
-.topbar-step  { font-size: 12px; color: var(--ink3); font-family: var(--mono); }
-.settings-btn { background: none; border: none; color: var(--ink2); font-size: 22px; cursor: pointer; padding: 4px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-/* ── PROGRESS BAR ── */
-.progress-wrap { flex-shrink: 0; height: 3px; background: var(--surf2); }
-.progress-fill { height: 100%; background: var(--teal); transition: width .3s ease; }
+  html, body {
+    height: 100%;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    overflow: hidden;
+  }
 
-/* ── SCROLL AREA ── */
-.scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 24px 20px 120px; }
+  #app {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+  }
 
-/* ── BOTTOM NAV ── */
-.bottom-nav {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  padding: 12px 20px max(20px, env(safe-area-inset-bottom));
-  background: linear-gradient(transparent, var(--bg) 30%);
-  display: flex; gap: 10px;
-}
-.btn-back { flex: 0 0 52px; background: var(--surf2); border: none; border-radius: var(--rsm); color: var(--ink2); font-size: 20px; cursor: pointer; }
-.btn-next { flex: 1; background: var(--teal); border: none; border-radius: var(--rsm); color: #0a2820; font-size: 15px; font-weight: 700; padding: 14px; cursor: pointer; letter-spacing: -.1px; }
-.btn-next:disabled { background: var(--surf3); color: var(--ink3); }
-.btn-generate { flex: 1; background: var(--accent); border: none; border-radius: var(--rsm); color: #1a1200; font-size: 15px; font-weight: 700; padding: 14px; cursor: pointer; }
+  /* ── TOP BAR ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 52px 20px 12px;
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+  .topbar-title {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    font-family: 'DM Mono', monospace;
+  }
+  .settings-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--ink2);
+    font-size: 16px;
+  }
 
-/* ── SECTION LABELS ── */
-.section-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3); margin-bottom: 10px; }
-.screen-title  { font-size: 22px; font-weight: 700; letter-spacing: -.3px; margin-bottom: 4px; }
-.screen-sub    { font-size: 14px; color: var(--ink2); margin-bottom: 24px; line-height: 1.5; }
+  /* ── PROGRESS ── */
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+    flex-shrink: 0;
+    margin: 0 20px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width .35s cubic-bezier(.4,0,.2,1);
+  }
 
-/* ── FIELD ── */
-.field { margin-bottom: 20px; }
-.field label { display: block; font-size: 13px; font-weight: 500; color: var(--ink2); margin-bottom: 7px; }
-.field input, .field textarea {
-  width: 100%; background: var(--surf); border: 1px solid var(--border2);
-  border-radius: var(--rsm); color: var(--ink); font-size: 15px; font-family: var(--sans);
-  padding: 11px 14px; outline: none;
-}
-.field textarea { min-height: 72px; resize: none; line-height: 1.5; }
-.field input:focus, .field textarea:focus { border-color: var(--teal); }
+  /* ── SCROLL AREA ── */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 20px 20px 0;
+  }
 
-/* ── CHIP GROUPS ── */
-.chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-.chip {
-  background: var(--surf2); border: 1px solid var(--border2);
-  border-radius: 20px; padding: 7px 14px;
-  font-size: 13px; color: var(--ink2); cursor: pointer; user-select: none;
-  transition: all .15s;
-}
-.chip.on-clean   { background: rgba(126,200,152,.15); border-color: var(--green);  color: var(--green);  }
-.chip.on-comp    { background: rgba(232,184,106,.15); border-color: var(--amber);  color: var(--amber);  }
-.chip.on-dysfunc { background: rgba(224,104,104,.15); border-color: var(--red);    color: var(--red);    }
-.chip.on-flag    { background: rgba(184,154,232,.15); border-color: var(--purple); color: var(--purple); }
-.chip.on-info    { background: rgba(200,184,154,.15); border-color: var(--accent); color: var(--accent); }
+  /* ── STEP ── */
+  .step { display: none; }
+  .step.active { display: block; }
 
-/* ── FINDING CARDS ── */
-.finding-card {
-  background: var(--surf); border: 1px solid var(--border2);
-  border-radius: var(--r); padding: 14px 16px; margin-bottom: 10px;
-}
-.finding-name { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
-.severity-row { display: flex; gap: 8px; }
-.sev-btn {
-  flex: 1; background: var(--surf2); border: 1px solid var(--border2);
-  border-radius: var(--rsm); padding: 8px 4px; font-size: 12px; font-weight: 600;
-  cursor: pointer; text-align: center; color: var(--ink3); transition: all .15s;
-}
-.sev-btn.active-clean   { background: rgba(126,200,152,.18); border-color: var(--green);  color: var(--green);  }
-.sev-btn.active-comp    { background: rgba(232,184,106,.18); border-color: var(--amber);  color: var(--amber);  }
-.sev-btn.active-dysfunc { background: rgba(224,104,104,.18); border-color: var(--red);    color: var(--red);    }
+  .step-header {
+    margin-bottom: 24px;
+  }
+  .step-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 500;
+    letter-spacing: .08em;
+    margin-bottom: 4px;
+  }
+  .step-title {
+    font-size: 24px;
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  .step-sub {
+    font-size: 14px;
+    color: var(--ink3);
+    margin-top: 4px;
+    font-weight: 400;
+  }
 
-/* ── NOTES ── */
-.notes-field {
-  width: 100%; background: var(--surf2); border: 1px solid var(--border);
-  border-radius: var(--rsm); color: var(--ink2); font-size: 13px; font-family: var(--sans);
-  padding: 10px 13px; outline: none; resize: none; margin-top: 10px;
-  min-height: 54px; line-height: 1.4;
-}
-.notes-field:focus { border-color: var(--border2); color: var(--ink); }
+  /* ── FIELD ── */
+  .field { margin-bottom: 20px; }
+  .field-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink3);
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-family: 'DM Mono', monospace;
+  }
 
-/* ── CALLOUT ── */
-.callout {
-  background: rgba(126,200,184,.08); border: 1px solid rgba(126,200,184,.2);
-  border-radius: var(--rsm); padding: 12px 14px; margin-bottom: 16px; font-size: 13px;
-  color: var(--ink2); line-height: 1.5;
-}
-.callout.warn { background: rgba(232,144,106,.08); border-color: rgba(232,144,106,.2); }
+  input[type=text], textarea, select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color .2s;
+    -webkit-appearance: none;
+  }
+  input[type=text]:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+  }
+  textarea { resize: none; min-height: 80px; line-height: 1.5; }
 
-/* ── RESULT TABS ── */
-.result-tabs { display: flex; gap: 2px; background: var(--surf2); border-radius: var(--rsm); padding: 3px; margin-bottom: 20px; }
-.result-tab  { flex: 1; padding: 8px 4px; text-align: center; font-size: 12px; font-weight: 600; border-radius: var(--rsm); cursor: pointer; color: var(--ink3); transition: all .2s; }
-.result-tab.active { background: var(--surf3); color: var(--ink); }
-.result-panel { display: none; }
-.result-panel.active { display: block; }
-.result-text { font-size: 14px; line-height: 1.7; color: var(--ink2); white-space: pre-wrap; }
-.result-text strong { color: var(--ink); font-weight: 600; }
-.action-row { display: flex; gap: 10px; margin-top: 20px; }
-.action-btn { flex: 1; background: var(--surf2); border: 1px solid var(--border2); border-radius: var(--rsm); padding: 12px; font-size: 13px; color: var(--ink2); cursor: pointer; text-align: center; }
-.action-btn.primary { background: var(--teal); color: #0a2820; font-weight: 700; border: none; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-/* ── SETTINGS OVERLAY ── */
-.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.8); z-index: 100; display: none; align-items: flex-end; }
-.overlay.open { display: flex; }
-.overlay-panel { background: var(--surf); border-radius: var(--r) var(--r) 0 0; padding: 24px 20px max(28px, env(safe-area-inset-bottom)); width: 100%; }
-.overlay-title { font-size: 17px; font-weight: 700; margin-bottom: 20px; }
-.overlay-close { float: right; background: none; border: none; color: var(--ink2); font-size: 22px; cursor: pointer; }
+  /* ── PAIN SCALE ── */
+  .pain-scale {
+    display: grid;
+    grid-template-columns: repeat(11, 1fr);
+    gap: 4px;
+  }
+  .pain-btn {
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'DM Mono', monospace;
+    color: var(--ink2);
+    cursor: pointer;
+    transition: all .15s;
+    padding: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pain-btn.on {
+    background: var(--warn);
+    border-color: var(--warn);
+    color: white;
+  }
 
-/* ── SPINNER ── */
-.spinner { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px; color: var(--ink2); font-size: 14px; }
-.spin { width: 20px; height: 20px; border: 2px solid var(--surf3); border-top-color: var(--teal); border-radius: 50%; animation: spin .8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+  /* ── CHIPS ── */
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-size: 14px;
+    padding: 8px 14px;
+    border-radius: 100px;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--ink2);
+    cursor: pointer;
+    transition: all .15s;
+    user-select: none;
+    line-height: 1.2;
+  }
+  .chip.on {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent-text);
+    font-weight: 500;
+  }
+  .chip-section-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink3);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-family: 'DM Mono', monospace;
+    margin: 16px 0 8px;
+  }
 
-/* ── DIVIDER ── */
-.divider { height: 1px; background: var(--border); margin: 20px 0; }
+  /* ── NAV ── */
+  .nav {
+    flex-shrink: 0;
+    padding: 16px 20px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    display: flex;
+    gap: 12px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+  .btn {
+    flex: 1;
+    padding: 16px;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all .15s;
+    letter-spacing: .01em;
+  }
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--ink2);
+    border: 1px solid var(--border2);
+    flex: 0 0 auto;
+    padding: 16px 20px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-secondary:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── LOADING ── */
+  #step-loading {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 20px;
+    padding: 40px 20px;
+    text-align: center;
+  }
+  #step-loading.active { display: flex; }
+  .loader {
+    width: 40px; height: 40px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-title {
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--ink);
+  }
+  .loading-sub {
+    font-size: 14px;
+    color: var(--ink3);
+    line-height: 1.6;
+  }
+
+  /* ── OUTPUT ── */
+  #step-output { display: none; }
+  #step-output.active { display: block; }
+
+  .output-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+    margin-bottom: 20px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 9px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink3);
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .tab-btn.on {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.on { display: block; }
+
+  .output-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .output-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .output-card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ink3);
+  }
+  .copy-btn {
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    padding: 4px 10px;
+    border-radius: 100px;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--ink2);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .copy-btn.copied {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent-text);
+  }
+  .output-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--ink);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* ── SETTINGS ── */
+  #settings-screen {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    z-index: 100;
+    flex-direction: column;
+  }
+  #settings-screen.active { display: flex; }
+  .settings-header {
+    padding: 52px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .settings-title {
+    font-size: 20px;
+    font-weight: 300;
+  }
+  .close-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--ink2);
+    line-height: 1;
+  }
+  .settings-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px;
+  }
+  .settings-note {
+    font-size: 14px;
+    color: var(--ink2);
+    line-height: 1.6;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .settings-note a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .api-status {
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 100px;
+    display: inline-block;
+    margin-bottom: 16px;
+  }
+  .api-status.set {
+    background: var(--accent-light);
+    color: var(--accent-text);
+  }
+  .api-status.unset {
+    background: #fdf0e8;
+    color: #7a3810;
+  }
+  .save-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 12px;
+  }
+
+  /* ── WELCOME ── */
+  #welcome-screen {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    z-index: 90;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 28px;
+    text-align: center;
+  }
+  #welcome-screen.active { display: flex; }
+  .welcome-icon {
+    width: 72px; height: 72px;
+    background: var(--accent-light);
+    border-radius: 22px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    margin-bottom: 24px;
+  }
+  .welcome-title {
+    font-size: 28px;
+    font-weight: 300;
+    margin-bottom: 8px;
+  }
+  .welcome-sub {
+    font-size: 15px;
+    color: var(--ink2);
+    line-height: 1.6;
+    margin-bottom: 36px;
+  }
+  .welcome-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 12px;
+  }
+  .welcome-skip {
+    font-size: 14px;
+    color: var(--ink3);
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+  .pb-safe { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
 </style>
 </head>
 <body>
+
+<!-- WELCOME -->
+<div id="welcome-screen">
+  <div class="welcome-icon">🌿</div>
+  <h1 class="welcome-title">Session Notes</h1>
+  <p class="welcome-sub">Post-session notes tool for bodywork practitioners. Generates SOAP notes and client home care plans in seconds.</p>
+  <button class="welcome-btn" onclick="openSettings(true)">Add your API key to get started</button>
+  <span class="welcome-skip" onclick="dismissWelcome()">I'll do this later</span>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings-screen">
+  <div class="settings-header">
+    <div class="settings-title">Settings</div>
+    <div class="close-btn" onclick="closeSettings()">×</div>
+  </div>
+  <div class="settings-body">
+    <div class="api-status unset" id="apiStatus">No API key saved</div>
+    <div class="field">
+      <div class="field-label">Anthropic API key</div>
+      <input type="text" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+    </div>
+    <div class="settings-note">
+      Get your API key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys → Create Key.<br><br>
+      Your key is stored only on this device and never sent anywhere except Anthropic's servers when you generate notes.
+    </div>
+    <div class="field">
+      <div class="field-label">Your name / sign-off</div>
+      <input type="text" id="practitionerName" placeholder="e.g. Sarah">
+    </div>
+    <div class="field">
+      <div class="field-label">Your email (for saving records)</div>
+      <input type="text" id="practitionerEmail" placeholder="you@gmail.com" autocapitalize="none" autocorrect="off" inputmode="email">
+    </div>
+    <button class="save-btn" onclick="saveSettings()">Save settings</button>
+    <div class="divider"></div>
+    <div style="font-size:13px;color:var(--ink3);line-height:1.6;">
+      <strong style="color:var(--ink2)">Cost per session:</strong> approx $0.01–0.03 using Claude Sonnet.<br>
+      Set a monthly spend limit at console.anthropic.com → Billing.
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
 <div id="app">
   <div class="topbar">
-    <div>
-      <div class="topbar-step" id="stepLabel">Step 1 of 8</div>
-      <div class="topbar-title" id="screenTitle">Client Info</div>
-    </div>
-    <button class="settings-btn" onclick="openSettings()">⚙︎</button>
+    <div class="topbar-title" id="topbarTitle">New session</div>
+    <div class="settings-btn" onclick="openSettings(false)">⚙</div>
   </div>
-  <div class="progress-wrap"><div class="progress-fill" id="progressBar" style="width:12.5%"></div></div>
-  <div class="scroll" id="scrollArea"></div>
-  <div class="bottom-nav" id="bottomNav">
-    <button class="btn-back" id="btnBack" onclick="prevStep()">←</button>
-    <button class="btn-next" id="btnNext" onclick="nextStep()">Continue</button>
-  </div>
-</div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
 
-<!-- Settings overlay -->
-<div class="overlay" id="settingsOverlay" onclick="closeSettings()">
-  <div class="overlay-panel" onclick="e=>e.stopPropagation()">
-    <button class="overlay-close" onclick="closeSettings()">×</button>
-    <div class="overlay-title">Settings</div>
-    <div class="field">
-      <label>Anthropic API Key</label>
-      <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
-    </div>
-    <button class="btn-next" onclick="saveKey()">Save Key</button>
-  </div>
-</div>
+  <div class="scroll-area" id="scrollArea">
 
-<script src="matrix-data.js"></script>
-<script>
-// ═══════════════════════════════════════════════════════════════════
-// DATA MODEL
-// ═══════════════════════════════════════════════════════════════════
-
-// State
-const state = {
-  step: 0,
-  client: { name: '', date: '', history: '', goal: '', flags: [], complaints: '' },
-  screens: {}, // { findingName: { severity: 'clean'|'comp'|'dysfunc', notes: '' } }
-  result: { corrective: '', flags: '', summary: '' },
-};
-
-// ── SCREEN DEFINITIONS ────────────────────────────────────────────
-// Each finding name EXACTLY matches a Clinical Decision Matrix row
-const SCREENS = [
-  // Step 0 — Client info (handled separately)
-
-  { // Step 1
-    id: 'posture',
-    title: 'Standing Posture',
-    subtitle: 'Static assessment. Observe from front, side, and behind. Client stands naturally — do not cue corrections.',
-    findings: [
-      'Forward head posture',
-      'Rounded shoulders / protracted scapulae',
-      'Thoracic kyphosis',
-      'Anterior pelvic tilt',
-      'Knee hyperextension',
-      'Foot overpronation / arch collapse',
-    ],
-    conditional: false,
-  },
-  { // Step 2
-    id: 'ohs',
-    title: 'Overhead Squat',
-    subtitle: '5 reps, bodyweight, arms overhead. Observe from front and side. Generate hypotheses only — run clearance tests before prescribing.',
-    findings: [
-      'Arms fall forward',
-      'Excessive forward lean',
-      'Knee valgus',
-      'Heel rise',
-    ],
-    conditional: false,
-  },
-  { // Step 3
-    id: 'sls',
-    title: 'Single Leg Squat',
-    subtitle: '5 reps each side. Observe from front. Compare L/R. Hip drop >5° or knee past midline = clinically significant.',
-    findings: [
-      'Ipsilateral hip drop',
-      'Knee valgus on descent',
-      'Trunk lateral flexion',
-    ],
-    conditional: false,
-  },
-  { // Step 4
-    id: 'push',
-    title: 'Push Pattern',
-    subtitle: 'Assess with push-up or wall push-up. Observe scapular behaviour, shoulder elevation, elbow angle, wrist alignment, and bilateral symmetry.',
-    findings: [
-      'Scapular winging',
-      'Shoulder elevation',
-      'Elbow flare > 75°',
-      'Wrist deviation under load',
-      'Asymmetrical press',
-    ],
-    conditional: false,
-  },
-  { // Step 5
-    id: 'pull',
-    title: 'Pull Pattern',
-    subtitle: 'Band or cable row at moderate resistance. Observe scapular timing, upper trap, end-range retraction, bicep engagement, and cervical position.',
-    findings: [
-      'Upper trap dominant',
-      'Limited shoulder extension',
-      'Bicep dominance',
-      'Cervical protrusion on row',
-    ],
-    conditional: false,
-  },
-  { // Step 6
-    id: 'hinge',
-    title: 'Hip Hinge',
-    subtitle: 'Bodyweight dowel hinge — 3-point contact (head, thoracic, sacrum). Observe from side. Note setup symmetry BEFORE movement begins.',
-    findings: [
-      'Lumbar flexion / rounding',
-      'Knee dominant pattern',
-      'Hip shift / asymmetry',
-      'Lateral setup asymmetry',
-      'Hyperextension at top',
-    ],
-    conditional: false,
-  },
-  { // Step 7 — Conditional
-    id: 'cervical',
-    title: 'Cervical Screen',
-    subtitle: 'Run if: FHP present, client reports neck pain/headaches, or cervical protrusion observed on pull screen. STOP if arm tingling, dizziness, or bilateral symptoms appear.',
-    findings: [
-      'Cervical rotation restriction',
-      'Cervical flexion/extension restriction',
-    ],
-    conditional: true,
-    trigger: () => {
-      const triggers = ['Forward head posture', 'Cervical protrusion on row'];
-      return triggers.some(f => state.screens[f]);
-    },
-    callout: { type: 'warn', text: '🛑 RED FLAG: Stop and refer immediately if any finding reproduces arm pain, tingling, dizziness, or bilateral upper extremity symptoms.' },
-  },
-  { // Step 8 — Conditional
-    id: 'shoulder',
-    title: 'Shoulder Mobility',
-    subtitle: 'Run if: rounded shoulders, arms fall on OHS, shoulder history on intake, or asymmetrical push/pull observed.',
-    findings: [
-      'GIRD — glenohumeral internal rotation deficit',
-      'Limited overhead reach',
-    ],
-    conditional: true,
-    trigger: () => {
-      const triggers = ['Rounded shoulders / protracted scapulae', 'Arms fall forward', 'Elbow flare > 75°', 'Asymmetrical press'];
-      return triggers.some(f => state.screens[f]);
-    },
-  },
-];
-
-const TOTAL_STEPS = 9; // 0=client, 1-6=core, 7=cervical, 8=shoulder, 9=results
-let activeStep = 0; // 0-indexed into the flow
-
-// ═══════════════════════════════════════════════════════════════════
-// RENDERING
-// ═══════════════════════════════════════════════════════════════════
-
-function render() {
-  const scroll = document.getElementById('scrollArea');
-  const btnNext = document.getElementById('btnNext');
-  const btnBack = document.getElementById('btnBack');
-  const stepLabel = document.getElementById('stepLabel');
-  const screenTitle = document.getElementById('screenTitle');
-  const bottomNav = document.getElementById('bottomNav');
-  const progress = document.getElementById('progressBar');
-
-  // Progress
-  progress.style.width = `${((activeStep + 1) / (TOTAL_STEPS + 1)) * 100}%`;
-  btnBack.style.display = activeStep === 0 ? 'none' : '';
-
-  scroll.scrollTop = 0;
-
-  if (activeStep === 0) {
-    stepLabel.textContent = 'Step 1 of 9';
-    screenTitle.textContent = 'Client Info';
-    scroll.innerHTML = renderClientStep();
-    btnNext.textContent = 'Begin Assessment →';
-    btnNext.disabled = false;
-    btnNext.className = 'btn-next';
-    bottomNav.innerHTML = `
-      <button class="btn-back" id="btnBack" style="display:none" onclick="prevStep()">←</button>
-      <button class="btn-next" onclick="nextStep()">Begin Assessment →</button>
-    `;
-    bindChips();
-  } else if (activeStep <= 8) {
-    const screen = SCREENS[activeStep - 1];
-    stepLabel.textContent = `Step ${activeStep + 1} of 9`;
-    screenTitle.textContent = screen.title;
-    scroll.innerHTML = renderScreenStep(screen);
-    bottomNav.innerHTML = `
-      <button class="btn-back" onclick="prevStep()">←</button>
-      <button class="btn-next" onclick="nextStep()">Continue →</button>
-    `;
-    // Rebind chips
-    bindChips();
-  } else {
-    // Results
-    stepLabel.textContent = 'Results';
-    screenTitle.textContent = 'Screen Output';
-    scroll.innerHTML = renderResults();
-    bottomNav.innerHTML = `
-      <button class="btn-back" onclick="prevStep()">← Back</button>
-      <button class="btn-next" onclick="startOver()">New Screen</button>
-    `;
-  }
-}
-
-function renderClientStep() {
-  const c = state.client;
-  return `
-    <div class="section-label">Client Details</div>
-    <div class="field">
-      <label>Client Name</label>
-      <input type="text" id="c_name" value="${c.name}" placeholder="Full name" oninput="state.client.name=this.value">
-    </div>
-    <div class="field">
-      <label>Date</label>
-      <input type="date" id="c_date" value="${c.date || new Date().toISOString().slice(0,10)}" oninput="state.client.date=this.value">
-    </div>
-    <div class="field">
-      <label>Training History</label>
-      <input type="text" id="c_hist" value="${c.history}" placeholder="e.g. 2 years casual, just running" oninput="state.client.history=this.value">
-    </div>
-    <div class="field">
-      <label>Primary Goal</label>
-      <input type="text" id="c_goal" value="${c.goal}" placeholder="e.g. lose fat, build strength, reduce pain" oninput="state.client.goal=this.value">
-    </div>
-    <div class="divider"></div>
-    <div class="section-label">Special Flags</div>
-    <div class="chip-group">
-      ${['Hypermobility (hEDS/HSD)', 'Acute pain today', 'Post-surgical', 'Pregnant/postpartum', 'Osteoporosis', 'Neurological'].map(f =>
-        `<div class="chip ${state.client.flags.includes(f) ? 'on-flag' : ''}" data-flag="${f}">${f}</div>`
-      ).join('')}
-    </div>
-    <div class="field">
-      <label>Chief Complaint / Notes</label>
-      <textarea id="c_complaints" placeholder="Pain location, symptoms, anything relevant..." oninput="state.client.complaints=this.value">${c.complaints}</textarea>
-    </div>
-  `;
-}
-
-function renderScreenStep(screen) {
-  let html = '';
-
-  html += `<p class="screen-sub">${screen.subtitle}</p>`;
-
-  if (screen.callout) {
-    html += `<div class="callout ${screen.callout.type === 'warn' ? 'warn' : ''}">${screen.callout.text}</div>`;
-  }
-
-  if (screen.conditional && screen.trigger && !screen.trigger()) {
-    html += `<div class="callout">This screen was not triggered by earlier findings. You can still run it manually if clinically indicated.</div>`;
-  }
-
-  html += `<div class="section-label">Findings</div>`;
-  html += `<p style="font-size:13px;color:var(--ink3);margin-bottom:14px;">Tap a finding to mark it. Then rate severity: <span style="color:var(--green)">✓ Clean</span> · <span style="color:var(--amber)">~ Compensating</span> · <span style="color:var(--red)">✗ Dysfunctional</span></p>`;
-
-  screen.findings.forEach(finding => {
-    const sel = state.screens[finding];
-    const isSelected = !!sel;
-    html += `
-      <div class="finding-card" id="fc-${finding.replace(/[^a-z0-9]/gi,'_')}">
-        <div class="finding-name" data-finding="${finding}" data-action="toggle" style="cursor:pointer">
-          ${isSelected ? `<span style="color:var(--teal)">●</span>` : `<span style="color:var(--ink3)">○</span>`}
-          &nbsp;${finding}
+    <!-- STEP 0: BASICS -->
+    <div class="step active" id="step-0">
+      <div class="step-header">
+        <div class="step-num">01 / 04</div>
+        <div class="step-title">Session basics</div>
+        <div class="step-sub">Who and when</div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <div class="field-label">Client name</div>
+          <input type="text" id="clientName" placeholder="First name">
         </div>
-        ${isSelected ? `
-          <div class="severity-row">
-            <button class="sev-btn ${sel.severity === 'clean' ? 'active-clean' : ''}" data-finding="${finding}" data-action="severity" data-sev="clean">✓ Clean</button>
-            <button class="sev-btn ${sel.severity === 'comp' ? 'active-comp' : ''}" data-finding="${finding}" data-action="severity" data-sev="comp">~ Compensating</button>
-            <button class="sev-btn ${sel.severity === 'dysfunc' ? 'active-dysfunc' : ''}" data-finding="${finding}" data-action="severity" data-sev="dysfunc">✗ Dysfunctional</button>
-          </div>
-          <textarea class="notes-field" placeholder="Notes (optional)..." data-finding="${finding}" data-action="note">${sel.notes || ''}</textarea>
-        ` : ''}
+        <div class="field">
+          <div class="field-label">Date</div>
+          <input type="text" id="sessionDate" placeholder="Today">
+        </div>
       </div>
-    `;
-  });
-
-  // Screen-level notes
-  html += `
-    <div class="divider"></div>
-    <div class="section-label">Screen Notes</div>
-    <textarea class="notes-field" style="min-height:72px" placeholder="General observations for this screen..." data-screen-id="${screen.id}">${(state.screenNotes || {})[screen.id] || ''}</textarea>
-  `;
-
-  // Last screen — show Generate button
-  if (activeStep === 8) {
-    html += `
-      <div class="divider"></div>
-      <div class="callout">
-        <strong style="color:var(--ink)">Ready to generate.</strong> This will send all findings to Claude using your Clinical Decision Matrix to produce a prioritised corrective plan, program design flags, and a session summary.
+      <div class="row2">
+        <div class="field">
+          <div class="field-label">Length</div>
+          <select id="sessionLength">
+            <option value="">Select</option>
+            <option>30 min</option>
+            <option>60 min</option>
+            <option>90 min</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="field-label">Modality</div>
+          <select id="sessionType">
+            <option value="">Select</option>
+            <option>Swedish / relaxation</option>
+            <option>Deep tissue</option>
+            <option>Myofascial release</option>
+            <option>Trigger point</option>
+            <option>Sports</option>
+            <option>Mixed modalities</option>
+          </select>
+        </div>
       </div>
-    `;
-  }
-
-  return html;
-}
-
-function renderResults() {
-  const r = state.result;
-  const hasResult = r.corrective || r.flags || r.summary;
-
-  if (!hasResult) {
-    return `
-      <div class="spinner"><div class="spin"></div> Generating from matrix…</div>
-    `;
-  }
-
-  return `
-    <div class="result-tabs">
-      <div class="result-tab active" onclick="switchTab(this,'corrective')">Corrective Plan</div>
-      <div class="result-tab" onclick="switchTab(this,'flags')">Program Flags</div>
-      <div class="result-tab" onclick="switchTab(this,'summary')">Summary</div>
+      <div class="field">
+        <div class="field-label">Client reported today</div>
+        <textarea id="complaints" placeholder="Pain, tightness, stress, goals for today..."></textarea>
+      </div>
+      <div class="field">
+        <div class="field-label">Pain / discomfort at start (0–10)</div>
+        <div class="pain-scale" id="painScaleStart"></div>
+      </div>
+      <div class="pb-safe"></div>
     </div>
-    <div class="result-panel active" id="tab-corrective">
-      <div class="result-text" id="txt-corrective">${formatResult(r.corrective)}</div>
-    </div>
-    <div class="result-panel" id="tab-flags">
-      <div class="result-text" id="txt-flags">${formatResult(r.flags)}</div>
-    </div>
-    <div class="result-panel" id="tab-summary">
-      <div class="result-text" id="txt-summary">${formatResult(r.summary)}</div>
-    </div>
-    <div class="action-row">
-      <button class="action-btn" onclick="copyAll()">Copy All</button>
-      <button class="action-btn primary" onclick="sendEmail()">Send to Email ↗</button>
-    </div>
-  `;
-}
 
-// ═══════════════════════════════════════════════════════════════════
-// INTERACTIONS
-// ═══════════════════════════════════════════════════════════════════
+    <!-- STEP 1: AREAS -->
+    <div class="step" id="step-1">
+      <div class="step-header">
+        <div class="step-num">02 / 04</div>
+        <div class="step-title">Areas worked</div>
+        <div class="step-sub">Tap all regions addressed</div>
+      </div>
+      <div class="chip-section-label">Upper body</div>
+      <div class="chip-group">
+        <span class="chip" data-v="Head / scalp">Head / scalp</span>
+        <span class="chip" data-v="Face / jaw (TMJ)">Face / jaw</span>
+        <span class="chip" data-v="Neck (SCM, scalenes, suboccipitals)">Neck</span>
+        <span class="chip" data-v="Upper trapezius">Upper trap</span>
+        <span class="chip" data-v="Levator scapulae">Levator scap</span>
+        <span class="chip" data-v="Thoracic spine / erectors">Thoracic spine</span>
+        <span class="chip" data-v="Rhomboids / mid-back">Rhomboids</span>
+        <span class="chip" data-v="Pec minor / anterior shoulder">Pec minor</span>
+        <span class="chip" data-v="Rotator cuff">Rotator cuff</span>
+        <span class="chip" data-v="Biceps / forearm flexors">Biceps / forearm</span>
+        <span class="chip" data-v="Triceps">Triceps</span>
+      </div>
+      <div class="chip-section-label">Core & lower body</div>
+      <div class="chip-group">
+        <span class="chip" data-v="Lumbar erectors / QL">Lumbar / QL</span>
+        <span class="chip" data-v="Hip flexors (psoas, iliacus, TFL)">Hip flexors</span>
+        <span class="chip" data-v="Glutes / piriformis">Glutes / piriformis</span>
+        <span class="chip" data-v="IT band / lateral thigh">IT band</span>
+        <span class="chip" data-v="Quadriceps">Quads</span>
+        <span class="chip" data-v="Hamstrings">Hamstrings</span>
+        <span class="chip" data-v="Adductors">Adductors</span>
+        <span class="chip" data-v="Tibialis anterior / peroneals">Anterior shin</span>
+        <span class="chip" data-v="Gastrocnemius / soleus">Calves</span>
+        <span class="chip" data-v="Plantar fascia / intrinsic foot">Feet / plantar</span>
+      </div>
+      <div class="pb-safe"></div>
+    </div>
 
-function toggleClientFlag(f) {
-  const i = state.client.flags.indexOf(f);
-  if (i > -1) state.client.flags.splice(i, 1);
-  else state.client.flags.push(f);
-  render();
-}
+    <!-- STEP 2: FINDINGS -->
+    <div class="step" id="step-2">
+      <div class="step-header">
+        <div class="step-num">03 / 04</div>
+        <div class="step-title">Tissue findings</div>
+        <div class="step-sub">What you observed and felt</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Tissue quality</div>
+        <div class="chip-group">
+          <span class="chip" data-v="Hypertonicity / guarding">Hypertonicity</span>
+          <span class="chip" data-v="Active trigger points">Active TPs</span>
+          <span class="chip" data-v="Latent trigger points">Latent TPs</span>
+          <span class="chip" data-v="Fascial restriction / adhesion">Fascial restriction</span>
+          <span class="chip" data-v="Poor tissue hydration">Poor hydration</span>
+          <span class="chip" data-v="Swelling / edema present">Swelling / edema</span>
+          <span class="chip" data-v="Scar tissue / fibrosis">Scar tissue</span>
+          <span class="chip" data-v="Tissue responded well to work">Good release</span>
+          <span class="chip" data-v="High tissue resistance throughout">High resistance</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">Palpation notes</div>
+        <textarea id="palpation" placeholder="Location + what you felt. e.g. Active TP right upper trap with referral to occiput. QL asymmetry L > R..." style="min-height:100px"></textarea>
+      </div>
+      <div class="field">
+        <div class="field-label">Client response</div>
+        <div class="chip-group">
+          <span class="chip" data-v="Good release — tissue let go well">Good release</span>
+          <span class="chip" data-v="Guarded / protective throughout">Guarded</span>
+          <span class="chip" data-v="Pressure-sensitive — needed light touch">Pressure sensitive</span>
+          <span class="chip" data-v="Deep parasympathetic response — fell asleep">Fell asleep</span>
+          <span class="chip" data-v="Reported referred sensation during TP work">Referred sensation</span>
+          <span class="chip" data-v="Significant relief reported mid-session">Relief mid-session</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">Pain / discomfort at end (0–10)</div>
+        <div class="pain-scale" id="painScaleEnd"></div>
+      </div>
+      <div class="pb-safe"></div>
+    </div>
 
-function toggleFinding(finding) {
-  if (state.screens[finding]) {
-    delete state.screens[finding];
-  } else {
-    state.screens[finding] = { severity: 'comp', notes: '' };
+    <!-- STEP 3: PATTERNS -->
+    <div class="step" id="step-3">
+      <div class="step-header">
+        <div class="step-num">04 / 04</div>
+        <div class="step-title">Patterns & priorities</div>
+        <div class="step-sub">Your clinical reasoning</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Primary pattern identified</div>
+        <div class="chip-group">
+          <span class="chip" data-v="Upper crossed syndrome (forward head, rounded shoulders, tight pecs and hip flexors, weak glutes and deep neck flexors)">Upper crossed</span>
+          <span class="chip" data-v="Lower crossed syndrome (anterior pelvic tilt, tight hip flexors and lumbar, weak glutes and abs)">Lower crossed</span>
+          <span class="chip" data-v="Chronic stress / nervous system dysregulation">Stress / NS dysregulation</span>
+          <span class="chip" data-v="Athletic overuse / repetitive strain">Athletic overuse</span>
+          <span class="chip" data-v="Post-injury guarding and compensation">Post-injury guarding</span>
+          <span class="chip" data-v="Hypermobility pattern — poor joint stability, tissue laxity">Hypermobility</span>
+          <span class="chip" data-v="Sedentary / desk worker deconditioning pattern">Desk worker</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">Flags / contraindications</div>
+        <textarea id="extraNotes" placeholder="Anything the AI should know — things to avoid, referral considerations, client preferences..."></textarea>
+      </div>
+      <div class="field">
+        <div class="field-label">Next session priority</div>
+        <textarea id="nextSession" placeholder="What do you want to focus on next time?"></textarea>
+      </div>
+      <div class="pb-safe"></div>
+    </div>
+
+  </div><!-- end scroll-area -->
+
+  <!-- LOADING -->
+  <div id="step-loading">
+    <div class="loader"></div>
+    <div class="loading-title">Generating outputs</div>
+    <div class="loading-sub" id="loadingMsg">Writing your SOAP note and home care plan...</div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div id="step-output" class="scroll-area" style="padding-top:16px;">
+    <div class="output-tabs">
+      <button class="tab-btn on" onclick="switchTab('soap')">SOAP note</button>
+      <button class="tab-btn" onclick="switchTab('email')">Client email</button>
+    </div>
+    <div class="tab-panel on" id="tab-soap">
+      <div class="output-card">
+        <div class="output-card-header">
+          <div class="output-card-label">For your records</div>
+          <button class="copy-btn" onclick="copyOutput('soapOut', this)">Copy</button>
+        </div>
+        <div class="output-text" id="soapOut"></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="tab-email">
+      <div class="output-card">
+        <div class="output-card-header">
+          <div class="output-card-label" id="emailMeta">Client email</div>
+          <button class="copy-btn" onclick="copyOutput('emailOut', this)">Copy</button>
+        </div>
+        <div class="output-text" id="emailOut"></div>
+      </div>
+    </div>
+    <div style="padding: 12px 0 8px; display:flex; gap:10px;">
+      <button class="btn btn-secondary" onclick="restart()" style="flex:0 0 auto;padding:14px 18px;">New session</button>
+      <button class="btn btn-primary" onclick="saveToGmail()">Save to Gmail ↗</button>
+    </div>
+    <div class="pb-safe"></div>
+  </div>
+
+  <!-- NAV -->
+  <div class="nav" id="mainNav">
+    <button class="btn btn-secondary" id="backBtn" onclick="nav(-1)" style="display:none">Back</button>
+    <button class="btn btn-primary" id="nextBtn" onclick="nav(1)">Next</button>
+  </div>
+</div>
+
+<script>
+let currentStep = 0;
+const TOTAL_STEPS = 4;
+let painStart = null;
+let painEnd = null;
+
+function buildPainScale(id, which) {
+  const c = document.getElementById(id);
+  for (let i = 0; i <= 10; i++) {
+    const b = document.createElement('button');
+    b.className = 'pain-btn';
+    b.textContent = i;
+    b.onclick = () => {
+      if (which === 'start') painStart = i;
+      else painEnd = i;
+      c.querySelectorAll('.pain-btn').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+    };
+    c.appendChild(b);
   }
-  render();
+}
+buildPainScale('painScaleStart', 'start');
+buildPainScale('painScaleEnd', 'end');
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.onclick = () => chip.classList.toggle('on');
+});
+
+function getSelected(selector) {
+  return [...document.querySelectorAll(selector + ' .chip.on')].map(c => c.dataset.v);
 }
 
-function setSeverity(finding, sev) {
-  if (state.screens[finding]) state.screens[finding].severity = sev;
-  render();
+function renderNav() {
+  const pct = (currentStep / (TOTAL_STEPS - 1)) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  const titles = ['New session', 'Areas worked', 'Tissue findings', 'Patterns'];
+  document.getElementById('topbarTitle').textContent = titles[currentStep] || 'Session notes';
+  document.getElementById('backBtn').style.display = currentStep === 0 ? 'none' : 'block';
+  document.getElementById('nextBtn').textContent = currentStep === TOTAL_STEPS - 1 ? 'Generate ↗' : 'Next';
 }
 
-function setNote(finding, val) {
-  if (state.screens[finding]) state.screens[finding].notes = val;
+function showStep(n) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('step-' + n);
+  if (el) el.classList.add('active');
+  document.getElementById('scrollArea').scrollTo(0, 0);
 }
 
-function bindChips() {
-  // Finding name cards — use data-finding to avoid inline string escaping issues
-  document.querySelectorAll('[data-finding]').forEach(el => {
-    const finding = el.dataset.finding;
-    const action  = el.dataset.action;
-    const sev     = el.dataset.sev;
-    if (action === 'toggle') {
-      el.addEventListener('click', () => toggleFinding(finding));
-    } else if (action === 'severity') {
-      el.addEventListener('click', () => setSeverity(finding, sev));
-    } else if (action === 'note') {
-      el.addEventListener('input', () => setNote(finding, el.value));
-    }
-  });
-  // Client flag chips
-  document.querySelectorAll('[data-flag]').forEach(el => {
-    el.addEventListener('click', () => toggleClientFlag(el.dataset.flag));
-  });
-  // Screen notes textarea
-  document.querySelectorAll('[data-screen-id]').forEach(el => {
-    const id = el.dataset.screenId;
-    el.addEventListener('input', () => {
-      state.screenNotes = state.screenNotes || {};
-      state.screenNotes[id] = el.value;
-    });
-  });
+function nav(dir) {
+  if (dir === 1 && currentStep === TOTAL_STEPS - 1) { generate(); return; }
+  currentStep = Math.max(0, Math.min(TOTAL_STEPS - 1, currentStep + dir));
+  showStep(currentStep);
+  renderNav();
 }
 
-function switchTab(btn, tabId) {
-  document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.result-panel').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('tab-' + tabId).classList.add('active');
+renderNav();
+
+function gatherData() {
+  return {
+    client: document.getElementById('clientName').value || 'Client',
+    date: document.getElementById('sessionDate').value || new Date().toLocaleDateString(),
+    length: document.getElementById('sessionLength').value || 'not specified',
+    type: document.getElementById('sessionType').value || 'not specified',
+    complaints: document.getElementById('complaints').value || 'none noted',
+    painStart: painStart !== null ? painStart : 'not recorded',
+    painEnd: painEnd !== null ? painEnd : 'not recorded',
+    areas: getSelected('#step-1'),
+    tissueFindings: getSelected('#step-2 .chip-group'),
+    palpation: document.getElementById('palpation').value || 'none noted',
+    clientResponse: [...document.querySelectorAll('#step-2 .chip-group:last-of-type .chip.on')].map(c => c.dataset.v),
+    patterns: getSelected('#step-3'),
+    extraNotes: document.getElementById('extraNotes').value || 'none',
+    nextSession: document.getElementById('nextSession').value || 'to be determined',
+    practitioner: localStorage.getItem('practitionerName') || ''
+  };
 }
-
-function formatResult(text) {
-  if (!text) return '<span style="color:var(--ink3)">No output</span>';
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^#{1,3} (.+)$/gm, '<strong style="color:var(--ink);font-size:15px">$1</strong>')
-    .replace(/\n/g, '<br>');
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// NAVIGATION
-// ═══════════════════════════════════════════════════════════════════
-
-function nextStep() {
-  // Save client fields on step 0
-  if (activeStep === 0) {
-    state.client.name = document.getElementById('c_name')?.value || '';
-    state.client.date = document.getElementById('c_date')?.value || '';
-    state.client.history = document.getElementById('c_hist')?.value || '';
-    state.client.goal = document.getElementById('c_goal')?.value || '';
-    state.client.complaints = document.getElementById('c_complaints')?.value || '';
-  }
-
-  if (activeStep === 8) {
-    // Generate
-    activeStep = 9;
-    render();
-    generate();
-    return;
-  }
-
-  activeStep = Math.min(activeStep + 1, 9);
-  render();
-}
-
-function prevStep() {
-  activeStep = Math.max(activeStep - 1, 0);
-  render();
-}
-
-function startOver() {
-  Object.assign(state, {
-    step: 0, client: { name:'', date:'', history:'', goal:'', flags:[], complaints:'' },
-    screens: {}, screenNotes: {}, result: { corrective:'', flags:'', summary:'' },
-  });
-  activeStep = 0;
-  render();
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// GENERATE — CALLS CLAUDE WITH EMBEDDED MATRIX DATA
-// ═══════════════════════════════════════════════════════════════════
 
 async function generate() {
-  const key = localStorage.getItem('apiKey');
-  if (!key) { openSettings(); return; }
-
-  // Build findings summary
-  const findings = Object.entries(state.screens);
-  if (findings.length === 0) {
-    state.result = { corrective: 'No findings were recorded.', flags: 'No findings were recorded.', summary: 'Assessment completed with no findings.' };
-    render();
+  const apiKey = localStorage.getItem('apiKey');
+  if (!apiKey) {
+    openSettings(false);
+    alert('Please add your API key in settings first.');
     return;
   }
 
-  // Build compact matrix reference — only findings present in this screen
-  let matrixRef = '';
-  findings.forEach(([name, data]) => {
-    const m = MATRIX[name];
-    if (m) {
-      matrixRef += `\n\n### ${name} [${data.severity.toUpperCase()}]`;
-      if (data.notes) matrixRef += `\nClinician notes: ${data.notes}`;
-      matrixRef += `\nSMR: ${m.smr}`;
-      matrixRef += `\nLengthen: ${m.len}`;
-      matrixRef += `\nActivate: ${m.act}`;
-      matrixRef += `\nExercises: ${m.ex}`;
-      matrixRef += `\nFlags: ${m.fl}`;
-    }
-  });
+  const data = gatherData();
 
-  const hypermobile = state.client.flags.includes('Hypermobility (hEDS/HSD)');
+  document.getElementById('scrollArea').style.display = 'none';
+  document.getElementById('mainNav').style.display = 'none';
+  document.getElementById('step-loading').classList.add('active');
+  document.getElementById('step-output').classList.remove('active');
 
-  const systemPrompt = `You are a clinical exercise prescriber for a personal trainer and licensed massage therapist. You generate precise, evidence-informed corrective prescriptions based on movement screen findings and a Clinical Decision Matrix.
+  const msgs = [
+    'Writing your SOAP note...',
+    'Building home care recommendations...',
+    'Almost done...'
+  ];
+  let mi = 0;
+  const msgEl = document.getElementById('loadingMsg');
+  const msgTimer = setInterval(() => {
+    mi = (mi + 1) % msgs.length;
+    msgEl.textContent = msgs[mi];
+  }, 2000);
 
-SEVERITY DEFINITIONS:
-- CLEAN: finding present but mild — note in program, address in warm-up
-- COMP (Compensating): moderate — include in accessory block, direct corrective work
-- DYSFUNC (Dysfunctional): significant — address before loading that pattern, may require regression
+  const signoff = data.practitioner ? `\n\nWarm regards,\n${data.practitioner}` : '';
 
-${hypermobile ? `HYPERMOBILITY RULES (NON-NEGOTIABLE — client has hEDS/HSD or suspected hypermobility):
-- NEVER prescribe passive end-range stretching
-- Prioritise isometric and slow-eccentric exercises only
-- Add "HYPERMOBILITY: avoid end-range loading" to all relevant flags
-- Replace any passive stretches with active stability work
-- Flag every exercise that requires modification
-` : ''}
+  const prompt = `You are a clinical assistant for a licensed massage therapist and personal trainer. Generate two outputs from these post-session notes.
 
-OUTPUT FORMAT — produce exactly three sections separated by === markers:
-=== CORRECTIVE PLAN ===
-List 4–8 prioritised exercises in kinetic chain order (ankle → hip → thoracic → cervical/shoulder).
-For each exercise:
-**[Exercise Name]** — [Sets]×[Reps/Duration] — [One coaching cue]
+SESSION DATA:
+Client: ${data.client} | Date: ${data.date} | Length: ${data.length} | Modality: ${data.type}
+Client reported: ${data.complaints}
+Pain at start: ${data.painStart}/10 | Pain at end: ${data.painEnd}/10
+Areas worked: ${data.areas.join(', ') || 'not specified'}
+Tissue findings: ${data.tissueFindings.join(', ') || 'not specified'}
+Palpation notes: ${data.palpation}
+Client response: ${data.clientResponse.join(', ') || 'not specified'}
+Patterns identified: ${data.patterns.join(', ') || 'not specified'}
+Flags / contraindications: ${data.extraNotes}
+Next session priority: ${data.nextSession}
 
-=== PROGRAM DESIGN FLAGS ===
-6–10 specific do/don't statements tied to findings. Include severity context.
-Format: • [DO/DO NOT/FLAG]: [specific instruction tied to a finding]
+OUTPUT 1 — SOAP NOTE (practitioner records, clinical language):
+S: [client-reported symptoms, complaints, pain scale at start]
+O: [areas worked, tissue quality, palpation findings, client response, pain at end]
+A: [patterns identified, clinical reasoning, flags to monitor]
+P: [next session focus, home care assigned, referral notes if needed]
 
-=== SCREEN SUMMARY ===
-2–3 sentences. Clinical record language. State key findings, primary drivers, and immediate program implications.`;
+OUTPUT 2 — CLIENT HOME CARE EMAIL (warm, plain language, no jargon):
+Write a friendly email with:
+- One sentence acknowledging what was addressed today
+- 3–5 specific home care recommendations drawn from: stretches, SMR/foam rolling, mobility drills, breathwork, heat/ice, hydration
+- For each: name it simply, explain why (tied to their body/session), give step-by-step instructions a non-fitness person can follow
+- One encouraging closing line${signoff}
 
-  const userPrompt = `CLIENT: ${state.client.name || 'Unknown'}
-Date: ${state.client.date || 'Today'}
-Training history: ${state.client.history || 'Not provided'}
-Goal: ${state.client.goal || 'Not specified'}
-Complaints: ${state.client.complaints || 'None'}
-Special flags: ${state.client.flags.join(', ') || 'None'}
-
-MOVEMENT SCREEN FINDINGS WITH MATRIX DATA:
-${matrixRef}
-
-Generate the corrective plan, program design flags, and screen summary using the matrix data above. Use the exact exercise names from the matrix. Weight your corrective priorities by severity — DYSFUNC findings take precedence.`;
+Format your entire response EXACTLY as:
+SOAP_START
+[soap note here]
+SOAP_END
+EMAIL_START
+[email here]
+EMAIL_END`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': key,
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
+        'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }],
-      }),
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }]
+      })
     });
 
+    clearInterval(msgTimer);
+    const json = await res.json();
+
     if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`API ${res.status}: ${err}`);
+      const errMsg = json.error?.message || 'Unknown error';
+      throw new Error(errMsg);
     }
 
-    const data = await res.json();
-    const text = data.content[0].text;
+    const text = json.content?.[0]?.text || '';
+    const soapMatch = text.match(/SOAP_START\s*([\s\S]*?)\s*SOAP_END/);
+    const emailMatch = text.match(/EMAIL_START\s*([\s\S]*?)\s*EMAIL_END/);
 
-    // Parse sections
-    const corrective = (text.match(/=== CORRECTIVE PLAN ===([\s\S]*?)(?:=== PROGRAM DESIGN FLAGS ===|$)/) || ['', ''])[1].trim();
-    const flags      = (text.match(/=== PROGRAM DESIGN FLAGS ===([\s\S]*?)(?:=== SCREEN SUMMARY ===|$)/) || ['', ''])[1].trim();
-    const summary    = (text.match(/=== SCREEN SUMMARY ===([\s\S]*)$/) || ['', ''])[1].trim();
+    document.getElementById('soapOut').textContent = soapMatch ? soapMatch[1].trim() : text;
+    document.getElementById('emailOut').textContent = emailMatch ? emailMatch[1].trim() : 'Could not parse email output.';
+    document.getElementById('emailMeta').textContent = `To: ${data.client}`;
 
-    state.result = { corrective, flags, summary };
-    render();
+    document.getElementById('step-loading').classList.remove('active');
+    document.getElementById('step-output').classList.add('active');
+    document.getElementById('mainNav').style.display = 'none';
+    document.getElementById('progressFill').style.width = '100%';
+    document.getElementById('topbarTitle').textContent = 'Outputs ready';
+    localStorage.setItem('lastSessionDate', data.date);
 
-  } catch (e) {
-    state.result = {
-      corrective: `Error: ${e.message}`,
-      flags: 'Generation failed — check API key in Settings.',
-      summary: '',
-    };
-    render();
+  } catch(e) {
+    clearInterval(msgTimer);
+    document.getElementById('step-loading').classList.remove('active');
+    document.getElementById('scrollArea').style.display = 'block';
+    document.getElementById('mainNav').style.display = 'flex';
+    showStep(currentStep);
+    alert('Error: ' + e.message + '\n\nCheck your API key in settings.');
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// UTILITIES
-// ═══════════════════════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('on', (i === 0 && tab === 'soap') || (i === 1 && tab === 'email'));
+  });
+  document.getElementById('tab-soap').classList.toggle('on', tab === 'soap');
+  document.getElementById('tab-email').classList.toggle('on', tab === 'email');
+}
 
-function openSettings() {
-  document.getElementById('apiKeyInput').value = localStorage.getItem('apiKey') || '';
-  document.getElementById('settingsOverlay').classList.add('open');
+function copyOutput(id, btn) {
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(() => {
+    btn.textContent = 'Copied ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function restart() {
+  currentStep = 0;
+  painStart = null;
+  painEnd = null;
+  document.querySelectorAll('.chip.on').forEach(c => c.classList.remove('on'));
+  document.querySelectorAll('.pain-btn.on').forEach(b => b.classList.remove('on'));
+  ['clientName','sessionDate','complaints','palpation','extraNotes','nextSession'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['sessionLength','sessionType'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.selectedIndex = 0;
+  });
+  document.getElementById('step-output').classList.remove('active');
+  document.getElementById('scrollArea').style.display = 'block';
+  document.getElementById('mainNav').style.display = 'flex';
+  showStep(0);
+  renderNav();
+  switchTab('soap');
+}
+
+function refine() {
+  const soap = document.getElementById('soapOut').textContent;
+  const email = document.getElementById('emailOut').textContent;
+  if (window.parent && window.parent.sendPrompt) {
+    window.parent.sendPrompt('Here are the generated outputs — can you refine the home care recommendations or adjust anything?\n\nSOAP:\n' + soap + '\n\nEmail:\n' + email);
+  }
+}
+
+function saveToGmail() {
+  const soap = document.getElementById('soapOut').textContent;
+  const clientEmail = document.getElementById('emailOut').textContent;
+  const clientName = document.getElementById('emailMeta').textContent.replace('To: ', '') || 'Client';
+  const date = localStorage.getItem('lastSessionDate') || new Date().toLocaleDateString();
+  const to = localStorage.getItem('practitionerEmail') || '';
+
+  const subject = encodeURIComponent(`Session notes — ${clientName} — ${date}`);
+  const body = encodeURIComponent(
+    `SOAP NOTE
+${'─'.repeat(40)}
+${soap}
+
+
+CLIENT HOME CARE EMAIL
+${'─'.repeat(40)}
+${clientEmail}`
+  );
+
+  const mailtoUrl = `mailto:${to}?subject=${subject}&body=${body}`;
+  window.location.href = mailtoUrl;
+}
+
+// SETTINGS
+function openSettings(isWelcome) {
+  const s = document.getElementById('settings-screen');
+  s.classList.add('active');
+  const key = localStorage.getItem('apiKey') || '';
+  document.getElementById('apiKeyInput').value = key;
+  document.getElementById('practitionerName').value = localStorage.getItem('practitionerName') || '';
+  document.getElementById('practitionerEmail').value = localStorage.getItem('practitionerEmail') || '';
+  const status = document.getElementById('apiStatus');
+  if (key) { status.textContent = 'API key saved'; status.className = 'api-status set'; }
+  else { status.textContent = 'No API key saved'; status.className = 'api-status unset'; }
 }
 
 function closeSettings() {
-  document.getElementById('settingsOverlay').classList.remove('open');
+  document.getElementById('settings-screen').classList.remove('active');
 }
 
-function saveKey() {
-  const k = document.getElementById('apiKeyInput').value.trim();
-  if (k) { localStorage.setItem('apiKey', k); }
+function saveSettings() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const name = document.getElementById('practitionerName').value.trim();
+  if (key) localStorage.setItem('apiKey', key);
+  if (name) localStorage.setItem('practitionerName', name);
+  const email = document.getElementById('practitionerEmail').value.trim();
+  if (email) localStorage.setItem('practitionerEmail', email);
+  const status = document.getElementById('apiStatus');
+  status.textContent = key ? 'API key saved' : 'No API key saved';
+  status.className = key ? 'api-status set' : 'api-status unset';
   closeSettings();
+  document.getElementById('welcome-screen').classList.remove('active');
 }
 
-function copyAll() {
-  const r = state.result;
-  const text = `MOVEMENT SCREEN — ${state.client.name} — ${state.client.date}\n\n=== CORRECTIVE PLAN ===\n${r.corrective}\n\n=== PROGRAM DESIGN FLAGS ===\n${r.flags}\n\n=== SCREEN SUMMARY ===\n${r.summary}`;
-  navigator.clipboard.writeText(text).catch(() => {});
+function dismissWelcome() {
+  document.getElementById('welcome-screen').classList.remove('active');
 }
 
-function sendEmail() {
-  const r = state.result;
-  const name = state.client.name || 'Client';
-  const date = state.client.date || new Date().toISOString().slice(0,10);
-  const subject = encodeURIComponent(`Movement Screen — ${name} — ${date}`);
-  const body = encodeURIComponent(`CORRECTIVE PLAN\n\n${r.corrective}\n\nPROGRAM DESIGN FLAGS\n\n${r.flags}\n\nSCREEN SUMMARY\n\n${r.summary}`);
-  window.location.href = `mailto:?subject=${subject}&body=${body}`;
-}
-
-// ── Init ──────────────────────────────────────────────────────────
-state.client.date = new Date().toISOString().slice(0, 10);
-render();
+// INIT
+window.onload = () => {
+  const apiKey = localStorage.getItem('apiKey');
+  if (!apiKey) {
+    document.getElementById('welcome-screen').classList.add('active');
+  }
+  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  document.getElementById('sessionDate').value = today;
+};
 </script>
 </body>
 </html>

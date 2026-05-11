@@ -1,11 +1,11 @@
 {
-  "name": "Movement Screen",
-  "short_name": "Movement Screen",
-  "description": "Postural and movement assessment tool — Clinical Decision Matrix v4",
+  "name": "Session Notes",
+  "short_name": "Session Notes",
+  "description": "Post-session bodywork notes and home care generator",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f0f0f",
-  "theme_color": "#0f0f0f",
+  "background_color": "#f7f5f2",
+  "theme_color": "#1a1a1a",
   "orientation": "portrait",
   "icons": [
     {
