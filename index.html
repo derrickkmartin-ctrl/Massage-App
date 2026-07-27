@@ -334,6 +334,33 @@
     color: #ffffff;
     font-weight: 600;
   }
+  /* Code-carrying chip rows (flags, client pattern) — reuse .finding-chip */
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .field-hint {
+    font-size: 12px;
+    color: var(--ink3);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+  .edit-hint {
+    font-size: 11px;
+    color: var(--ink3);
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 8px;
+    opacity: .75;
+  }
+  .output-text[contenteditable="true"]:focus {
+    outline: none;
+    border-radius: 8px;
+    box-shadow: 0 0 0 2px var(--accent2);
+  }
 
   /* ── VOICE INPUT ── */
   .voice-field {
@@ -664,7 +691,8 @@
     </div>
     <div class="settings-note">
       Get your API key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys → Create Key.<br><br>
-      Your key is stored only on this device and never sent anywhere except Anthropic's servers when you generate notes.
+      Your key is stored only on this device and never sent anywhere except Anthropic's servers when you generate notes.<br><br>
+      When session logging is on (below), a summary of each session — date, client first name, length, modality, areas worked, findings, pain scores and the exercises recommended — is written to your own Google Sheet. Turn it off to keep sessions on this device only.
     </div>
     <div class="field">
       <div class="field-label">Your name / sign-off</div>
@@ -683,8 +711,14 @@
       <input type="text" id="exerciseDbUrl" placeholder="Google Sheets CSV URL..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
     </div>
     <div class="field">
-      <div class="field-label">Decision Matrix URL</div>
+      <div class="field-label">Palpation reference URL</div>
       <input type="text" id="decisionMatrixUrl" placeholder="Google Sheets CSV URL..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+    </div>
+    <div class="field">
+      <label class="field-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:14px;">
+        <input type="checkbox" id="logSessions" checked style="width:18px;height:18px;accent-color:var(--accent);flex:none;">
+        Log sessions to my Google Sheet
+      </label>
     </div>
     <button class="save-btn" style="background:var(--ink2);margin-bottom:16px;" onclick="saveAndReload()">Save &amp; reload data</button>
     <div class="divider"></div>
@@ -793,10 +827,17 @@
       </div>
       <div class="field">
         <div class="field-label">Flags / contraindications</div>
+        <div class="chip-row" id="flagChips"></div>
+        <div class="field-hint">Tap what applies — anything tapped is excluded from home care.</div>
         <div class="voice-field">
-          <textarea id="extraNotes" placeholder="Anything to avoid in home care — e.g. acute low back, post-op shoulder, avoid inversion..."></textarea>
+          <textarea id="extraNotes" placeholder="Anything else to note — post-op, avoid inversion, client preferences..."></textarea>
           <button class="mic-btn" onclick="toggleVoice('extraNotes', this)" title="Voice input">🎙</button>
         </div>
+      </div>
+      <div class="field">
+        <div class="field-label">Client pattern — optional</div>
+        <div class="chip-row" id="patternChips"></div>
+        <div class="field-hint">Helps rank home care. Skip it and ranking uses areas worked alone.</div>
       </div>
       <div class="field">
         <div class="field-label">Next session priority</div>
@@ -830,7 +871,8 @@
           <div class="output-card-label">For your records</div>
           <button class="copy-btn" onclick="copyOutput('soapOut', this)">Copy</button>
         </div>
-        <div class="output-text" id="soapOut"></div>
+        <div class="edit-hint">Tap to edit before sending</div>
+        <div class="output-text" id="soapOut" contenteditable="true" spellcheck="true"></div>
       </div>
       <div style="padding:8px 0 4px;display:flex;gap:10px;">
         <button class="btn btn-secondary" onclick="restart()" style="flex:0 0 auto;padding:14px 18px;">New session</button>
@@ -844,7 +886,8 @@
           <div class="output-card-label" id="emailMeta">Client email</div>
           <button class="copy-btn" onclick="copyOutput('emailOut', this)">Copy</button>
         </div>
-        <div class="output-text" id="emailOut"></div>
+        <div class="edit-hint">Tap to edit before sending</div>
+        <div class="output-text" id="emailOut" contenteditable="true" spellcheck="true"></div>
       </div>
       <div style="padding:8px 0 4px;display:flex;gap:10px;">
         <button class="btn btn-secondary" onclick="restart()" style="flex:0 0 auto;padding:14px 18px;">New session</button>
@@ -858,7 +901,8 @@
           <div class="output-card-label">Text / iMessage</div>
           <button class="copy-btn" onclick="copyOutput('textOut', this)">Copy</button>
         </div>
-        <div class="output-text" id="textOut"></div>
+        <div class="edit-hint">Tap to edit before sending</div>
+        <div class="output-text" id="textOut" contenteditable="true" spellcheck="true"></div>
       </div>
       <div style="padding:8px 0 4px;display:flex;gap:10px;">
         <button class="btn btn-secondary" onclick="restart()" style="flex:0 0 auto;padding:14px 18px;">New session</button>
@@ -883,10 +927,15 @@ const TOTAL_STEPS = 3;
 let painStart = null;
 let painEnd = null;
 let exerciseDB = [];
+let palpationDB = [];
 let expandedArea = null;
 
 // areaFindings: { 'Neck': ['Tight', 'Restricted ROM'], ... }
 const areaFindings = {};
+
+// Selected answer codes (see ANSWER CODES below)
+const selectedFlags = new Set();     // contraindication codes + hypermobility
+const selectedPatterns = new Set();  // indication_tags codes
 
 // Voice
 let activeRecognition = null;
@@ -899,13 +948,74 @@ const AREAS = [
   'Quads', 'Hamstrings', 'Calves', 'Feet'
 ];
 
+// ── ANSWER CODES ──
+// Same frozen-code convention as the training-program generator's intake form:
+// the practitioner sees the LABEL, the app stores and matches on the CODE.
+//   - Labels are safe to reword at any time.
+//   - Codes must NEVER be changed or reused — they are the join key into canon.
+//   - Every code below exists verbatim in canon's tag vocabulary
+//     (exercise_database_v17.xlsx: col N Contraindication Tags, col V Indication
+//     Tags). Adding a chip means the code must already exist in canon, not the
+//     other way round. Verified by the build's gate (a).
+
 const FINDINGS = [
-  'Tight',
-  'Trigger point',
-  'Restricted ROM',
-  'Discomfort / sensitive',
-  'Released well'
+  { label: 'Tight',                  code: 'finding__tight' },
+  { label: 'Trigger point',          code: 'finding__trigger_point' },
+  { label: 'Restricted ROM',         code: 'finding__restricted_rom' },
+  { label: 'Discomfort / sensitive', code: 'finding__discomfort' },
+  { label: 'Released well',          code: 'finding__released_well' }
 ];
+
+// Flags → canon Contraindication Tags. Selecting one HARD-EXCLUDES every
+// exercise carrying that tag. `hypermobility` is the one exception: it is a
+// canon Indication Tag, not a contraindication — it drives the passive-stretch
+// exclusion below rather than a tag intersection.
+const FLAG_CHIPS = [
+  { label: 'Acute low back',           code: 'low_back:acute' },
+  { label: 'Acute neck',               code: 'cervical:acute' },
+  { label: 'Acute shoulder',           code: 'shoulder:acute' },
+  { label: 'Shoulder impingement',     code: 'shoulder:impingement' },
+  { label: 'Shoulder instability',     code: 'shoulder:instability' },
+  { label: 'Acute hip',                code: 'hip:acute' },
+  { label: 'Acute knee',               code: 'knee:acute' },
+  { label: 'Patellofemoral knee',      code: 'knee:patellofemoral' },
+  { label: 'Acute ankle',              code: 'ankle:acute' },
+  { label: 'Ankle instability',        code: 'ankle:instability' },
+  { label: 'Acute wrist',              code: 'wrist:acute' },
+  { label: 'Radiating nerve symptoms', code: 'neural:acute' },
+  { label: 'Hypermobile',              code: 'hypermobility' }
+];
+const HYPERMOBILITY_CODE = 'hypermobility';
+
+// Client pattern → canon Indication Tags vocabulary, verbatim. Optional;
+// these are the ranking signal in filterExercises().
+const PATTERN_CHIPS = [
+  { label: 'Desk worker',              code: 'desk-worker' },
+  { label: 'Upper crossed',            code: 'upper-crossed' },
+  { label: 'Lower crossed',            code: 'lower-crossed' },
+  { label: 'Stress / nervous system',  code: 'stress-ns' },
+  { label: 'Athletic overuse',         code: 'athletic-overuse' },
+  { label: 'Post-injury',              code: 'post-injury' },
+  { label: 'Hypermobility',            code: 'hypermobility' }
+];
+
+// Max exercises passed to the prompt as the approved pool.
+const POOL_LIMIT = 12;
+
+// Area → palpation-reference muscles (canon's Palpation - Trigger Points sheet).
+// Mapped conservatively: only where that muscle's documented referral pattern
+// actually covers the worked area. The sheet currently holds 5 upper-body
+// muscles, so the other 10 areas have no palpation coverage and simply
+// contribute no clinical context — that is expected, not a gap in this map.
+// Keys match the muscle column verbatim.
+const AREA_PALPATION = {
+  'Neck':             ['Sternocleidomastoid (SCM)', 'Levator Scapulae', 'Upper Trapezius'],
+  'Shoulders':        ['Supraspinatus', 'Infraspinatus'],
+  'Lats / Mid-back':  ['Levator Scapulae']
+};
+
+// Findings that indicate a palpation finding worth pulling context for.
+const PALPATION_TRIGGER_CODES = ['finding__trigger_point', 'finding__tight'];
 
 // Area → exercise indication keywords (for DB pre-filtering)
 const AREA_KEYWORDS = {
@@ -925,7 +1035,10 @@ const AREA_KEYWORDS = {
 };
 
 const DEFAULT_EXERCISE_DB_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSLa7kxxqcdI_5NFDT4w8W5dWR-CzhtGesEBqAEgKmhEZzIrv51EPAULcJllGYyeZP9aLl0Ky4CwXOK/pub?gid=0&single=true&output=csv';
-const DEFAULT_DECISION_MATRIX_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSLa7kxxqcdI_5NFDT4w8W5dWR-CzhtGesEBqAEgKmhEZzIrv51EPAULcJllGYyeZP9aLl0Ky4CwXOK/pub?gid=580618579&single=true&output=csv';
+// Palpation reference tab. Keeps the historical `decisionMatrixUrl` localStorage
+// key so no migration is needed — the tab it points at is now the palpation
+// export, not the old pattern-chip decision matrix (which the UI never used).
+const DEFAULT_PALPATION_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSLa7kxxqcdI_5NFDT4w8W5dWR-CzhtGesEBqAEgKmhEZzIrv51EPAULcJllGYyeZP9aLl0Ky4CwXOK/pub?gid=580618579&single=true&output=csv';
 const DEFAULT_SESSION_LOG_URL = 'https://script.google.com/macros/s/AKfycbymCvsinMfH_u-E_DQOJKRGebp1UK22gWCB7CvqzQ4tA6u0deZw8hfHgOtbwTFQx2Jd/exec';
 
 // ── CSV PARSER ──
@@ -975,6 +1088,17 @@ async function loadSheetData() {
     console.warn('Could not load exercise data:', e);
     updateDataStatus(false);
   }
+  // Palpation reference — independent and fail-soft: if it doesn't load,
+  // generation proceeds with no clinical-context block.
+  const palUrl = localStorage.getItem('decisionMatrixUrl') || DEFAULT_PALPATION_URL;
+  try {
+    const res = await fetch(palUrl);
+    if (!res.ok) throw new Error('Fetch failed');
+    palpationDB = parseCSV(await res.text());
+  } catch(e) {
+    palpationDB = [];
+    console.warn('Could not load palpation reference (non-blocking):', e);
+  }
 }
 
 function updateDataStatus(loaded) {
@@ -984,56 +1108,102 @@ function updateDataStatus(loaded) {
   el.className = 'api-status ' + (loaded ? 'set' : 'unset');
 }
 
-// ── FILTER EXERCISES (area-based) ──
+// ── FILTER + RANK EXERCISES ──
+// Hard exclusions on answer codes, then score, then sort, then cap. The old
+// implementation substring-matched the freetext flags field against canon tag
+// words — it silently failed unless the practitioner happened to type canon's
+// exact vocabulary — and returned an unsorted slice(), so "top 15" was really
+// "first 15 in sheet order". Both are replaced here.
+function splitTags(value) {
+  return (value || '').split('|').map(t => t.trim().toLowerCase()).filter(Boolean);
+}
+
 function filterExercises(data) {
   if (!exerciseDB.length) return [];
 
   const workedAreas = Object.keys(data.areaFindings).filter(k => !k.endsWith('_notes'));
   if (workedAreas.length === 0) return [];
 
-  const flags = (data.extraNotes || '').toLowerCase();
-  const clinicalText = (data.clinicalNotes || '').toLowerCase();
-  const isHypermobile = clinicalText.includes('hypermobil');
+  const flagCodes = new Set((data.flags || []).map(c => c.toLowerCase()));
+  const patternCodes = (data.patterns || []).map(c => c.toLowerCase());
+  const isHypermobile = flagCodes.has(HYPERMOBILITY_CODE) ||
+                        patternCodes.includes(HYPERMOBILITY_CODE);
 
-  // Build keyword set from worked areas
-  const keywords = new Set(
-    workedAreas.flatMap(area => AREA_KEYWORDS[area] || [])
-  );
+  const keywords = new Set(workedAreas.flatMap(area => AREA_KEYWORDS[area] || []));
 
-  const pool = exerciseDB.filter(ex => {
-    const tags = (ex.indication_tags || '').toLowerCase();
+  const scored = [];
+  exerciseDB.forEach((ex, idx) => {
     const name = (ex.name || '').toLowerCase();
-    const contra = (ex.contraindication_tags || '').toLowerCase();
+    const tags = splitTags(ex.indication_tags);
+    const contra = splitTags(ex.contraindication_tags);
 
-    // Must relate to at least one worked area
-    const relevant = [...keywords].some(kw => tags.includes(kw) || name.includes(kw));
-    if (!relevant) return false;
+    // 1. HARD EXCLUSIONS — exact set intersection, no substring matching.
+    if (contra.some(t => flagCodes.has(t))) return;
 
-    // Contraindication check against flags field
-    if (flags && contra) {
-      const contraWords = contra.split('|').map(c =>
-        c.split(':')[0].replace(/_/g, ' ').trim().toLowerCase()
-      );
-      if (contraWords.some(cw => cw && flags.includes(cw))) return false;
+    // Hypermobility: passive end-range stretching is the thing to avoid.
+    // Keyed on the chip, not on scanning freetext for "hypermobil".
+    if (isHypermobile) {
+      const isPassiveStretch = name.includes('stretch') ||
+        ((ex.category || '').toLowerCase() === 'mobility' && name.includes('stretch'));
+      if (isPassiveStretch) return;
     }
 
-    // Hypermobility — skip stretches
-    if (isHypermobile && name.includes('stretch')) return false;
+    // 2. SCORE
+    let score = 0;
+    patternCodes.forEach(pc => { if (tags.includes(pc)) score += 3; });
+    const areaMatch = [...keywords].some(kw =>
+      tags.some(t => t.includes(kw)) || name.includes(kw));
+    if (areaMatch) score += 1;
 
-    return true;
+    // Must relate to a worked area or a selected pattern — otherwise it is
+    // just an arbitrary exercise.
+    if (score === 0) return;
+
+    scored.push({ ex, score, idx });
   });
 
-  // Cap pool at 15 for prompt efficiency
-  return pool.slice(0, 15);
+  // 3. SORT by score desc, stable tiebreak on sheet order. 4. CAP.
+  scored.sort((a, b) => b.score - a.score || a.idx - b.idx);
+  return scored.slice(0, POOL_LIMIT).map(s => s.ex);
+}
+
+// ── PALPATION CONTEXT ──
+// Prompt-level only: never filters exercises. Returns [] when the CSV did not
+// load (fail-soft) or when no worked area has a palpable finding.
+function palpationContext(data) {
+  if (!palpationDB.length) return [];
+  const wanted = new Set();
+  Object.keys(data.areaFindings)
+    .filter(k => !k.endsWith('_notes'))
+    .forEach(area => {
+      const muscles = AREA_PALPATION[area];
+      if (!muscles) return;
+      const codes = (data.areaFindings[area] || []).map(findingCode);
+      if (!codes.some(c => PALPATION_TRIGGER_CODES.includes(c))) return;
+      muscles.forEach(m => wanted.add(m));
+    });
+  if (!wanted.size) return [];
+  return palpationDB.filter(row => wanted.has((row.muscle || '').trim()));
+}
+
+function findingCode(label) {
+  const f = FINDINGS.find(x => x.label === label);
+  return f ? f.code : '';
 }
 
 // ── LOG SESSION ──
 async function logSession(data, exercises) {
   const logUrl = DEFAULT_SESSION_LOG_URL;
   if (!logUrl) return;
+  // Consent gate — off means nothing leaves the device.
+  if (localStorage.getItem('logSessions') === 'off') return;
   try {
     const areasText = Object.entries(data.areaFindings)
-      .map(([a, f]) => `${a}${f.length ? ': ' + f.join(', ') : ''}`)
+      .filter(([a]) => !a.endsWith('_notes'))
+      .map(([a, f]) => {
+        const codes = (f || []).map(findingCode).filter(Boolean);
+        return `${a}${codes.length ? ': ' + codes.join(', ') : ''}`;
+      })
       .join(' | ');
     await fetch(logUrl, {
       method: 'POST',
@@ -1115,11 +1285,12 @@ function renderAreas() {
 
       FINDINGS.forEach(finding => {
         const fc = document.createElement('span');
-        fc.className = 'finding-chip' + (findings.includes(finding) ? ' on' : '');
-        fc.textContent = finding;
+        fc.className = 'finding-chip' + (findings.includes(finding.label) ? ' on' : '');
+        fc.textContent = finding.label;
+        fc.dataset.code = finding.code;
         fc.onclick = (e) => {
           e.stopPropagation();
-          toggleFinding(area, finding);
+          toggleFinding(area, finding.label);
         };
         panel.appendChild(fc);
       });
@@ -1157,6 +1328,28 @@ function renderAreas() {
     container.appendChild(wrapper);
   });
 }
+
+// ── CODE CHIP ROWS (flags, client pattern) ──
+function renderCodeChips(containerId, chips, selectedSet) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  chips.forEach(chip => {
+    const el = document.createElement('span');
+    el.className = 'finding-chip' + (selectedSet.has(chip.code) ? ' on' : '');
+    el.textContent = chip.label;
+    el.dataset.code = chip.code;   // frozen code — never derive logic from the label
+    el.onclick = () => {
+      if (selectedSet.has(chip.code)) selectedSet.delete(chip.code);
+      else selectedSet.add(chip.code);
+      renderCodeChips(containerId, chips, selectedSet);
+    };
+    container.appendChild(el);
+  });
+}
+
+function renderFlagChips()    { renderCodeChips('flagChips', FLAG_CHIPS, selectedFlags); }
+function renderPatternChips() { renderCodeChips('patternChips', PATTERN_CHIPS, selectedPatterns); }
 
 function toggleAreaExpand(area) {
   if (expandedArea === area) {
@@ -1267,6 +1460,8 @@ function nav(dir) {
 
 renderNav();
 renderAreas();
+renderFlagChips();
+renderPatternChips();
 
 // ── GATHER DATA ──
 function gatherData() {
@@ -1281,6 +1476,8 @@ function gatherData() {
     areaFindings: { ...areaFindings },
     clinicalNotes: document.getElementById('clinicalNotes').value || 'none noted',
     extraNotes: document.getElementById('extraNotes').value || 'none',
+    flags: [...selectedFlags],
+    patterns: [...selectedPatterns],
     nextSession: document.getElementById('nextSession').value || 'to be determined',
     practitioner: localStorage.getItem('practitionerName') || ''
   };
@@ -1341,15 +1538,42 @@ async function generate() {
 
   const signoff = data.practitioner ? `\n\nWarm regards,\n${data.practitioner}` : '';
 
-  // Build exercise pool text
+  // Build exercise pool text. home_care_instructions is guaranteed non-empty —
+  // data/convert.py exports only rows that carry it — so there is deliberately
+  // no coaching_cue fallback here: the gym cue must never leak into a client email.
   let exercisePoolText = '';
   if (filteredExercises.length > 0) {
     exercisePoolText = `\nAPPROVED HOME CARE POOL — select 3–5 from this list only:\n` +
       filteredExercises.map((ex, i) => {
         const url = ex.youtube_url ? `\n   Watch: ${ex.youtube_url}` : '';
-        return `${i + 1}. ${ex.name} [${ex.category || 'general'}]\n   ${ex.home_care_instructions || ex.coaching_cue || ''}${url}`;
+        return `${i + 1}. ${ex.name} [${ex.category || 'general'}]\n   ${ex.home_care_instructions || ''}${url}`;
       }).join('\n');
   }
+
+  // Palpation clinical context — informs the SOAP note only, never selection.
+  const palpationRows = palpationContext(data);
+  let palpationText = '';
+  if (palpationRows.length > 0) {
+    palpationText = `\nPALPATION REFERENCE — clinical context for the muscles palpated today. Use this to inform the Assessment section's reasoning and any referral/differential note. Do NOT recommend exercises from here; the approved pool above is the only source for home care:\n` +
+      palpationRows.map(p => {
+        const bits = [];
+        if (p.referral_pattern) bits.push(`Referral: ${p.referral_pattern}`);
+        if (p.program_design_flags) bits.push(`Flags: ${p.program_design_flags}`);
+        return `- ${p.muscle}: ${bits.join(' | ')}`;
+      }).join('\n');
+  }
+
+  const flagLabels = data.flags
+    .map(c => (FLAG_CHIPS.find(f => f.code === c) || {}).label)
+    .filter(Boolean);
+  const patternLabels = data.patterns
+    .map(c => (PATTERN_CHIPS.find(f => f.code === c) || {}).label)
+    .filter(Boolean);
+  const flagsLine = flagLabels.length
+    ? `${flagLabels.join(', ')}${data.extraNotes && data.extraNotes !== 'none' ? ' — ' + data.extraNotes : ''}`
+    : data.extraNotes;
+  const patternLine = patternLabels.length
+    ? `\nClient pattern: ${patternLabels.join(', ')}` : '';
 
   const homeCareInstruction = filteredExercises.length > 0
     ? `3–5 home care recommendations. PRIORITY: if any specific exercises are named in the clinical notes, include those first regardless of whether they appear in the approved pool. Fill remaining slots from the APPROVED HOME CARE POOL. For each exercise that has a Watch URL, include it as a plain hyperlink on its own line after the instructions so the client can watch the movement`
@@ -1366,8 +1590,9 @@ Areas worked with findings:
 ${areasText}
 
 Clinical notes: ${data.clinicalNotes}
-Flags / contraindications: ${data.extraNotes}
+Flags / contraindications: ${flagsLine}${patternLine}
 Next session priority: ${data.nextSession}
+${palpationText}
 ${exercisePoolText}
 
 OUTPUT 1 — SOAP NOTE (practitioner records, clinical language):
@@ -1401,25 +1626,36 @@ TEXT_START
 TEXT_END`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 2800,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
+    let res;
+    try {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-5',
+          max_tokens: 2800,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+    } catch (netErr) {
+      const err = new Error(netErr.message || 'Network request failed');
+      err.isNetwork = true;
+      throw err;
+    }
 
     clearInterval(msgTimer);
     const json = await res.json();
 
-    if (!res.ok) throw new Error(json.error?.message || 'Unknown error');
+    if (!res.ok) {
+      const err = new Error(json.error?.message || `Request failed (${res.status})`);
+      err.status = res.status;
+      throw err;
+    }
 
     const text = json.content?.[0]?.text || '';
     const soapMatch = text.match(/SOAP_START\s*([\s\S]*?)\s*SOAP_END/);
@@ -1446,8 +1682,24 @@ TEXT_END`;
     document.getElementById('scrollArea').style.display = 'block';
     document.getElementById('mainNav').style.display = 'flex';
     showStep(currentStep);
-    alert('Error: ' + e.message + '\n\nCheck your API key in settings.');
+    alert(errorMessage(e));
   }
+}
+
+// Distinguish auth failure from connectivity from everything else — the old
+// single message blamed the API key for network drops.
+function errorMessage(e) {
+  if (e && e.status === 401) {
+    return 'Your API key was rejected (401).\n\nOpen Settings and check the key — it may have been revoked or mistyped.';
+  }
+  if (e && e.status === 403) {
+    return 'That API key is not permitted to make this request (403).\n\nOpen Settings and check the key, or check your plan limits at console.anthropic.com.';
+  }
+  if (e && e.isNetwork) {
+    return 'Could not reach the server.\n\nCheck your internet connection and try again — your notes are still here.';
+  }
+  const detail = (e && e.message) ? e.message : 'Unknown error';
+  return 'Something went wrong generating your notes.\n\n' + detail;
 }
 
 // ── OUTPUT ──
@@ -1460,34 +1712,59 @@ function switchTab(tab) {
   });
 }
 
+// All output actions read the LIVE contents of the editable blocks, so any
+// practitioner edit is what gets copied, emailed, or texted.
+function outputText(id) {
+  const el = document.getElementById(id);
+  if (!el) return '';
+  // innerText preserves the line breaks contenteditable inserts as block/break
+  // elements; textContent would run the lines together.
+  return (el.innerText || el.textContent || '').trim();
+}
+
 function copyOutput(id, btn) {
-  navigator.clipboard.writeText(document.getElementById(id).textContent).then(() => {
+  navigator.clipboard.writeText(outputText(id)).then(() => {
     btn.textContent = 'Copied ✓';
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
   });
 }
 
+// iOS/Safari silently drop very long mailto: URLs, which looked like the button
+// doing nothing. Above the limit, copy the body and tell the practitioner.
+const MAILTO_MAX = 1800;
+function openMailto(url, body, what) {
+  if (url.length > MAILTO_MAX) {
+    navigator.clipboard.writeText(body).then(() => {
+      alert(`${what} is too long to open in your email app.\n\nIt has been copied to your clipboard — paste it into a new email.`);
+    }).catch(() => {
+      alert(`${what} is too long to open in your email app, and copying failed.\n\nUse the Copy button above, then paste into a new email.`);
+    });
+    return;
+  }
+  window.location.href = url;
+}
+
 function copySoap(btn) {
-  const soap = document.getElementById('soapOut').textContent;
+  const soap = outputText('soapOut');
   const clientName = document.getElementById('emailMeta').textContent.replace('To: ', '') || 'Client';
   const date = localStorage.getItem('lastSessionDate') || new Date().toLocaleDateString();
   const to = encodeURIComponent(localStorage.getItem('practitionerEmail') || '');
   const subject = encodeURIComponent(`SOAP — ${clientName} — ${date}`);
   const body = encodeURIComponent(soap);
-  window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+  openMailto(`mailto:${to}?subject=${subject}&body=${body}`, soap, 'This SOAP note');
 }
 
 function emailClient() {
-  const email = document.getElementById('emailOut').textContent;
+  const email = outputText('emailOut');
   const date = localStorage.getItem('lastSessionDate') || new Date().toLocaleDateString();
   const subject = encodeURIComponent(`Your home care plan — ${date}`);
   const body = encodeURIComponent(email);
-  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  openMailto(`mailto:?subject=${subject}&body=${body}`, email, 'This email');
 }
 
 function textClient() {
-  const text = document.getElementById('textOut').textContent;
+  const text = outputText('textOut');
   window.location.href = `sms:?&body=${encodeURIComponent(text)}`;
 }
 
@@ -1505,6 +1782,8 @@ function restart() {
   painEnd = null;
   expandedArea = null;
   Object.keys(areaFindings).forEach(k => delete areaFindings[k]);
+  selectedFlags.clear();
+  selectedPatterns.clear();
 
   // Reset voice
   if (activeRecognition) activeRecognition.stop();
@@ -1529,6 +1808,12 @@ function restart() {
   document.getElementById('mainNav').style.display = 'flex';
 
   renderAreas();
+  renderFlagChips();
+  renderPatternChips();
+  ['soapOut', 'emailOut', 'textOut'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '';
+  });
   showStep(0);
   renderNav();
   switchTab('soap');
@@ -1542,7 +1827,8 @@ function openSettings(isWelcome) {
   document.getElementById('practitionerName').value = localStorage.getItem('practitionerName') || '';
   document.getElementById('practitionerEmail').value = localStorage.getItem('practitionerEmail') || '';
   document.getElementById('exerciseDbUrl').value = localStorage.getItem('exerciseDbUrl') || DEFAULT_EXERCISE_DB_URL;
-  document.getElementById('decisionMatrixUrl').value = localStorage.getItem('decisionMatrixUrl') || DEFAULT_DECISION_MATRIX_URL;
+  document.getElementById('decisionMatrixUrl').value = localStorage.getItem('decisionMatrixUrl') || DEFAULT_PALPATION_URL;
+  document.getElementById('logSessions').checked = localStorage.getItem('logSessions') !== 'off';
   const status = document.getElementById('apiStatus');
   status.textContent = key ? 'API key saved' : 'No API key saved';
   status.className = 'api-status ' + (key ? 'set' : 'unset');
@@ -1559,6 +1845,7 @@ function saveSettings() {
   const email = document.getElementById('practitionerEmail').value.trim();
   const dbUrl = document.getElementById('exerciseDbUrl').value.trim();
   const matrixUrl = document.getElementById('decisionMatrixUrl').value.trim();
+  localStorage.setItem('logSessions', document.getElementById('logSessions').checked ? 'on' : 'off');
   if (key) localStorage.setItem('apiKey', key);
   if (name) localStorage.setItem('practitionerName', name);
   if (email) localStorage.setItem('practitionerEmail', email);
