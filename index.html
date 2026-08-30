@@ -860,6 +860,7 @@
 
   <!-- OUTPUT -->
   <div id="step-output" class="scroll-area" style="padding-top:16px;">
+    <div id="conflictBanner" style="display:none;margin-bottom:14px;padding:12px 14px;border:1px solid var(--warn);border-radius:10px;color:var(--warn);font-size:13px;line-height:1.5;"></div>
     <div class="output-tabs">
       <button class="tab-btn on" onclick="switchTab('soap')">SOAP note</button>
       <button class="tab-btn" onclick="switchTab('email')">Email</button>
@@ -977,11 +978,19 @@ const FLAG_CHIPS = [
   { label: 'Shoulder impingement',     code: 'shoulder:impingement' },
   { label: 'Shoulder instability',     code: 'shoulder:instability' },
   { label: 'Acute hip',                code: 'hip:acute' },
+  // 2026-08-28: five chips added so every tag carried by exported exercises
+  // is reachable from the UI (audit finding — an unreachable tag can never
+  // exclude anything). Codes verbatim from canon, per the rule above.
+  { label: 'Hip impingement / FAI',    code: 'hip:impingement' },
+  { label: 'Acute groin',              code: 'groin:acute' },
   { label: 'Acute knee',               code: 'knee:acute' },
   { label: 'Patellofemoral knee',      code: 'knee:patellofemoral' },
+  { label: 'Knee valgus pattern',      code: 'knee:valgus' },
   { label: 'Acute ankle',              code: 'ankle:acute' },
   { label: 'Ankle instability',        code: 'ankle:instability' },
+  { label: 'Acute Achilles',           code: 'achilles:acute' },
   { label: 'Acute wrist',              code: 'wrist:acute' },
+  { label: 'Acute elbow',              code: 'elbow:acute' },
   { label: 'Radiating nerve symptoms', code: 'neural:acute' },
   { label: 'Hypermobile',              code: 'hypermobility' }
 ];
@@ -1140,12 +1149,17 @@ function filterExercises(data) {
     // 1. HARD EXCLUSIONS — exact set intersection, no substring matching.
     if (contra.some(t => flagCodes.has(t))) return;
 
-    // Hypermobility: passive end-range stretching is the thing to avoid.
-    // Keyed on the chip, not on scanning freetext for "hypermobil".
+    // Hypermobility: passive end-range stretching is the thing to avoid —
+    // and so is joint distraction/traction on lax capsules (canon carries
+    // that caution at Notes level on the banded distraction drills, which no
+    // mechanical filter can see; name-keyed here until canon has a
+    // machine-readable caution tag). Keyed on the chip, not on freetext.
+    // 2026-08-28: fixed a redundant clause (the old second condition was a
+    // strict subset of the first) and added the distraction/dislocate catch.
     if (isHypermobile) {
-      const isPassiveStretch = name.includes('stretch') ||
-        ((ex.category || '').toLowerCase() === 'mobility' && name.includes('stretch'));
-      if (isPassiveStretch) return;
+      const isPassiveStretch = name.includes('stretch');
+      const isDistraction = name.includes('distraction') || name.includes('dislocate');
+      if (isPassiveStretch || isDistraction) return;
     }
 
     // 2. SCORE
@@ -1165,6 +1179,31 @@ function filterExercises(data) {
   // 3. SORT by score desc, stable tiebreak on sheet order. 4. CAP.
   scored.sort((a, b) => b.score - a.score || a.idx - b.idx);
   return scored.slice(0, POOL_LIMIT).map(s => s.ex);
+}
+
+// ── ESCAPE-HATCH CONFLICT CHECK (2026-08-28) ──
+// The prompt deliberately lets exercises named in the clinical notes bypass
+// the approved pool (the escape hatch). This keeps the hatch but makes its
+// cost visible: if a notes-named exercise carries a contraindication tag that
+// is flagged this session, a warning banner appears above the outputs.
+// Detection only — never blocks, never edits the prompt.
+function findNotesConflicts(data) {
+  const flagCodes = new Set((data.flags || []).map(c => c.toLowerCase()));
+  if (!flagCodes.size || !exerciseDB.length) return [];
+  let notes = [data.clinicalNotes, data.complaints, data.extraNotes]
+    .filter(v => v && v !== 'none noted' && v !== 'none').join(' ');
+  Object.keys(data.areaFindings || {}).filter(k => k.endsWith('_notes'))
+    .forEach(k => { notes += ' ' + (data.areaFindings[k] || ''); });
+  notes = notes.toLowerCase();
+  if (!notes.trim()) return [];
+  const conflicts = [];
+  exerciseDB.forEach(ex => {
+    const name = (ex.name || '').trim();
+    if (name.length < 4 || !notes.includes(name.toLowerCase())) return;
+    const hits = splitTags(ex.contraindication_tags).filter(t => flagCodes.has(t));
+    if (hits.length) conflicts.push({ name, tags: hits });
+  });
+  return conflicts;
 }
 
 // ── PALPATION CONTEXT ──
@@ -1508,6 +1547,19 @@ async function generate() {
   }
 
   const filteredExercises = filterExercises(data);
+
+  // Escape-hatch visibility (2026-08-28): a notes-named exercise that carries
+  // a flag selected this session gets called out above the outputs.
+  const conflicts = findNotesConflicts(data);
+  const conflictBanner = document.getElementById('conflictBanner');
+  if (conflicts.length) {
+    conflictBanner.textContent = '\u26a0 Named in your notes but flagged this session: ' +
+      conflicts.map(c => c.name + ' (' + c.tags.join(', ') + ')').join(' \u00b7 ') +
+      '. The AI is told to include exercises you name \u2014 review before sending.';
+    conflictBanner.style.display = 'block';
+  } else {
+    conflictBanner.style.display = 'none';
+  }
 
   document.getElementById('scrollArea').style.display = 'none';
   document.getElementById('mainNav').style.display = 'none';
