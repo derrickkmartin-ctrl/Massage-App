@@ -692,7 +692,7 @@
     <div class="settings-note">
       Get your API key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys → Create Key.<br><br>
       Your key is stored only on this device and never sent anywhere except Anthropic's servers when you generate notes.<br><br>
-      When session logging is on (below), a summary of each session — date, client first name, length, modality, areas worked, findings, pain scores and the exercises recommended — is written to your own Google Sheet. Turn it off to keep sessions on this device only.
+      When session logging is on (below), a record of each session — date, client first name, length, modality, areas worked, your clinical notes, pain scores and the exercises recommended — is written to your own Google Sheet. Turn it off to keep sessions on this device only.
     </div>
     <div class="field">
       <div class="field-label">Your name / sign-off</div>
@@ -955,9 +955,10 @@ const AREAS = [
 //   - Labels are safe to reword at any time.
 //   - Codes must NEVER be changed or reused — they are the join key into canon.
 //   - Every code below exists verbatim in canon's tag vocabulary
-//     (exercise_database_v17.xlsx: col N Contraindication Tags, col V Indication
-//     Tags). Adding a chip means the code must already exist in canon, not the
-//     other way round. Verified by the build's gate (a).
+//     (the current canon workbook in reference-data/ — see its CONTEXT.md for the
+//     version; col N Contraindication Tags, col V Indication Tags). Adding a chip
+//     means the code must already exist in canon, not the other way round.
+//     Enforced mechanically by check_drift.py's chip-reachability lint (2026-08-30).
 
 const FINDINGS = [
   { label: 'Tight',                  code: 'finding__tight' },
@@ -1689,7 +1690,7 @@ TEXT_END`;
           'anthropic-dangerous-direct-browser-access': 'true'
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-5',
+          model: 'claude-sonnet-5',  // 2026-08-30: moved from claude-sonnet-4-5 (retirement window opens 2026-09-29)
           max_tokens: 2800,
           messages: [{ role: 'user', content: prompt }]
         })
